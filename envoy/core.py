@@ -11,12 +11,14 @@ import os
 import shlex
 import subprocess
 import threading
+import platform
 
 
 __version__ = '0.0.2'
 __license__ = 'MIT'
 __author__ = 'Kenneth Reitz'
 
+POSIX = False if platform.system() == 'Windows' else True
 
 class Command(object):
     def __init__(self, cmd):
@@ -137,7 +139,7 @@ def expand_args(command):
 
     # Prepare arguments.
     if isinstance(command, basestring):
-        splitter = shlex.shlex(command, posix=True)
+        splitter = shlex.shlex(command, posix=POSIX)
         splitter.whitespace = '|'
         splitter.whitespace_split = True
         command = []
