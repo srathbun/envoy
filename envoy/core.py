@@ -157,19 +157,9 @@ def expand_args(command):
         if item:
             cmdlist.append(''.join(item))
 
-        splitter = shlex.shlex(command, posix=POSIX)
-        splitter.whitespace = '|'
-        splitter.whitespace_split = True
         command = []
-
-        while True:
-            token = splitter.get_token()
-            if token:
-                command.append(token)
-            else:
-                break
-
-        command = map(shlex.split, command)
+        for cmd in cmdlist:
+            command.append(shlex.split(cmd, posix=POSIX))
 
     return command
 
