@@ -139,6 +139,24 @@ def expand_args(command):
 
     # Prepare arguments.
     if isinstance(command, basestring):
+        item = []
+        cmdlist = []
+        singleQuotes = False
+        doubleQuotes = False
+
+        for c in command:
+            if c == '"':
+                doubleQuotes = not doubleQuotes
+            if c == "'":
+                singleQuotes = not singleQuotes
+            if c == '|' and not doubleQuotes and not singleQuotes:
+                cmdlist.append(''.join(item))
+                item = []
+            else:
+                item.append(c)
+        if item:
+            cmdlist.append(''.join(item))
+
         splitter = shlex.shlex(command, posix=POSIX)
         splitter.whitespace = '|'
         splitter.whitespace_split = True
