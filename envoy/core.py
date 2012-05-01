@@ -146,13 +146,12 @@ def expand_args(command):
         if not POSIX:
             s.wordchars = '{0}./\\-:'.format(s.wordchars) # added additional chars which windows sees as part of words...
         for tok in s: # we are build a parser for context, as shlex only handles tokenizing
-            if '"' in str(tok) and not POSIX:
-                print tok
+            if (str(tok).count('"') & 1 != 0) and not POSIX:
                 item.append(tok)
                 while 1:
                     t = s.get_token()
                     item[-1] = '{0} {1}'.format(item[-1], t)
-                    if '"' in t:
+                    if (str(tok).count('"') & 1 != 0):
                         break
                     elif t == s.eof:
                         break
