@@ -141,27 +141,31 @@ def expand_args(command):
     if isinstance(command, basestring):
         item = []
         cmdlist = []
-        singleQuotes = False
-        doubleQuotes = False
 
-        for c in command:
-            if c == '"':
-                doubleQuotes = not doubleQuotes
-            if c == "'":
-                singleQuotes = not singleQuotes
-            if c == '|' and not doubleQuotes and not singleQuotes:
-                cmdlist.append(''.join(item))
+        s = shlex.shlex(command, posix=POSIX)
+        if not POSIX:
+            s.wordchars = '{0}./\\-:'.format(s.wordchars) # added additional chars which windows sees as part of words...
+        for tok in s: # we are build a parser for context, as shlex only handles tokenizing
+            if '"' in str(tok) and not POSIX:
+                print tok
+                item.append(tok)
+                while 1:
+                    t = s.get_token()
+                    item[-1] = '{0} {1}'.format(item[-1], t)
+                    if '"' in t:
+                        break
+                    elif t == s.eof:
+                        break
+            elif tok == '=':
+                item[-1] = '{0}={1}'.format(item[-1], s.get_token())
+            elif tok == '|':
+                cmdlist.append(item)
                 item = []
             else:
-                item.append(c)
-        if item:
-            cmdlist.append(''.join(item))
+                item.append(tok)
+        cmdlist.append(item)
 
-        command = []
-        for cmd in cmdlist:
-            command.append(shlex.split(cmd, posix=POSIX))
-
-    return command
+    return cmdlist
 
 
 def run(command, data=None, timeout=None, env=None):
