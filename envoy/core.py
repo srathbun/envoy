@@ -134,7 +134,7 @@ class Response(object):
             return '<Response>'
 
 
-def expand_args(command):
+def expand_args(command, posix=None):
     """Parses command strings and returns a Popen-ready list."""
 
     # Prepare arguments.
@@ -142,22 +142,14 @@ def expand_args(command):
         item = []
         cmdlist = []
 
-        s = shlex.shlex(command, posix=POSIX)
-        if not POSIX:
-            s.wordchars = '{0}./\\-:'.format(s.wordchars) # added additional chars which windows sees as part of words...
-        for tok in s: # we are build a parser for context, as shlex only handles tokenizing
-            if (str(tok).count('"') & 1 != 0) and not POSIX:
-                item.append(tok)
-                while 1:
-                    t = s.get_token()
-                    item[-1] = '{0} {1}'.format(item[-1], t)
-                    if (str(tok).count('"') & 1 != 0):
-                        break
-                    elif t == s.eof:
-                        break
-            elif tok == '=':
-                item[-1] = '{0}={1}'.format(item[-1], s.get_token())
-            elif tok == '|':
+        if posix is not None:
+            p = posix
+        else:
+            p = POSIX
+        s = shlex.shlex(command, posix=p) # POSIX mode can now be manually set, in case you are using a *nix util on windows I.E. ghostscript
+        s.whitespace_split = True
+        for tok in s: # this is almost identical to what shlex.split does, only we start a new list if we see a pipe by itself. All lists get packaged up together, and we are good.
+            if tok == '|':
                 cmdlist.append(item)
                 item = []
             else:
@@ -167,13 +159,13 @@ def expand_args(command):
     return cmdlist
 
 
-def run(command, data=None, timeout=None, env=None):
+def run(command, data=None, timeout=None, env=None, posix=None):
     """Executes a given commmand and returns Response.
 
     Blocks until process is complete, or timeout is reached.
     """
 
-    command = expand_args(command)
+    command = expand_args(command, posix=posix)
 
     history = []
     for c in command:
@@ -200,11 +192,11 @@ def run(command, data=None, timeout=None, env=None):
     return r
 
 
-def connect(command, data=None, env=None):
+def connect(command, data=None, env=None, posix=None):
     """Spawns a new process from the given command."""
 
     # TODO: support piped commands
-    command_str = expand_args(command).pop()
+    command_str = expand_args(command, posix=posix).pop()
     environ = dict(os.environ).update(env or {})
 
     process = subprocess.Popen(command_str,
